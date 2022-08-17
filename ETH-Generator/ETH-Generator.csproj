@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Nethereum.HdWallet" Version="4.7.0" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.116" />
   </ItemGroup>
 
 </Project>
