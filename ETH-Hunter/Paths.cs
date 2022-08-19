@@ -1,4 +1,4 @@
-﻿namespace ETH_Generator
+﻿namespace ETH_HUNTER
 {
     public static class Paths
     {
