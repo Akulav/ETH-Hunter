@@ -1,9 +1,9 @@
-﻿using NBitcoin;
+﻿using System.Data.SQLite;
+using System.Diagnostics;
+using NBitcoin;
 using Nethereum.HdWallet;
 using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
-using System.Data.SQLite;
-using System.Diagnostics;
 
 namespace ETH_HUNTER
 {
@@ -12,7 +12,7 @@ namespace ETH_HUNTER
     {
         public static int index = 0;
         public static int guess = 0;
-        public static readonly int delay = 100;
+        public static readonly int delay = 85;
 
         static void Main()
         {
@@ -24,7 +24,7 @@ namespace ETH_HUNTER
             con.Open();
 
             //Make connection to the blockchain
-            var web3 = new Web3("YOUR WEB3 ETH NODE ADDRESS");
+            var web3 = new Web3("");
 
             //Start clock
             Stopwatch stopwatch = new();
@@ -52,13 +52,19 @@ namespace ETH_HUNTER
                     {
                         guess++;
                         Console.WriteLine("FUCK YES");
-                        var data_cmd = new SQLiteCommand(con)
-                        {
-                            CommandText = $@"INSERT INTO data(key, balance) VALUES ('{account.PrivateKey}', '{balance}')"
-                        };
-                        data_cmd.ExecuteNonQuery();
                     }
+
+                    var data_cmd = new SQLiteCommand(con)
+                    {
+                        CommandText = $@"INSERT INTO data(key, balance, address) VALUES ('{account.PrivateKey}', '{balance}', '{account.Address}')"
+                    };
+                    data_cmd.ExecuteNonQuery();
+
+                    Console.Clear();
                     Console.WriteLine("[Elapsed] " + watch.Elapsed + " \n[Checked] " + index.ToString() + " \n[Guessed] " + guess.ToString() + " \n[Address] " + account.Address + " \n[Private] " + account.PrivateKey + " \n[Balance] " + balance + "\n======ETH-HUNTER-V1.0======");
+
+                    //Console.WriteLine("\n[Elapsed] " + watch.Elapsed + " \n[Checked] " + index.ToString() + " \n[Guessed] " + guess.ToString());
+
                     index++;
                 });
                 thread.Start();
@@ -80,7 +86,7 @@ namespace ETH_HUNTER
                 con.Open();
                 var data_cmd = new SQLiteCommand(con)
                 {
-                    CommandText = @"CREATE TABLE data(key VARCRHAR(250), balance VARCRHAR(250))"
+                    CommandText = @"CREATE TABLE data(key VARCRHAR(250), balance VARCRHAR(250) , address VARCHAR(250))"
                 };
 
                 data_cmd.ExecuteNonQuery();
@@ -89,7 +95,3 @@ namespace ETH_HUNTER
         }
     }
 }
-
-
-
-
