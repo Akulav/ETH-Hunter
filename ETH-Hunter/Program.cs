@@ -1,9 +1,9 @@
-﻿using System.Data.SQLite;
-using System.Diagnostics;
-using NBitcoin;
+﻿using NBitcoin;
 using Nethereum.HdWallet;
 using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
+using System.Data.SQLite;
+using System.Diagnostics;
 
 namespace ETH_HUNTER
 {
@@ -12,65 +12,83 @@ namespace ETH_HUNTER
     {
         public static int index = 0;
         public static int guess = 0;
-        public static readonly int delay = 85;
+        public static int errors = 0;
+        public static readonly int delay = 30;
+
+
+
+        public static readonly string[] web3Urls = {
+            "https://ethereum.publicnode.com",
+            //"https://nodes.mewapi.io/rpc/eth", //this errors
+            "https://cloudflare-eth.com/",
+            //"https://rpc.flashbots.net/", //this errors
+            //"https://rpc.ankr.com/eth", //this errors
+            "https://eth-mainnet.public.blastapi.io"
+        };
 
         static void Main()
         {
-            //Create the db if not created yet
+            // Create the db if not created yet
             InitializeDataSet();
 
-            //Open the connection to the database
-            var con = new SQLiteConnection(Paths.database_connection);
-            con.Open();
+            // Open the connection to the database
+            using (var con = new SQLiteConnection(Paths.database_connection))
+            {
+                con.Open();
 
-            //Make connection to the blockchain
-            var web3 = new Web3("");
+                // Start clock
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
 
-            //Start clock
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
-
-            //Call the execution
-            Generate(web3, con, stopwatch);
+                // Call the execution
+                while (true)
+                {
+                    Generate(con, stopwatch);
+                    Thread.Sleep(delay);
+                }
+            }
         }
 
-        private static async void Generate(Web3 web3, SQLiteConnection con, Stopwatch watch)
+        private static async void Generate(SQLiteConnection con, Stopwatch watch)
         {
-
-            while (true)
+            async Task ProcessThreadAsync(Web3 web, int threadIndex)
             {
-                Thread thread = new(async () =>
+                Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+                string password = "";
+                Wallet wallet = new Wallet(mnemonic.ToString(), password);
+                Account account = wallet.GetAccount(0);
+
+                try
                 {
-                    Mnemonic mnemonic = new(Wordlist.English, WordCount.Twelve);
-                    string password = "";
-                    Wallet wallet = new(mnemonic.ToString(), password);
-                    Account account = wallet.GetAccount(0);
-
-                    var balance = await web3.Eth.GetBalance.SendRequestAsync(account.Address);
-
+                    var balance = await web.Eth.GetBalance.SendRequestAsync(account.Address);
                     if (Web3.Convert.FromWei(balance.Value) != 0)
                     {
-                        guess++;
-                        Console.WriteLine("FUCK YES");
+                        Interlocked.Increment(ref guess);
                     }
 
                     var data_cmd = new SQLiteCommand(con)
                     {
                         CommandText = $@"INSERT INTO data(key, balance, address) VALUES ('{account.PrivateKey}', '{balance}', '{account.Address}')"
                     };
+
                     data_cmd.ExecuteNonQuery();
 
                     Console.Clear();
-                    Console.WriteLine("[Elapsed] " + watch.Elapsed + " \n[Checked] " + index.ToString() + " \n[Guessed] " + guess.ToString() + " \n[Address] " + account.Address + " \n[Private] " + account.PrivateKey + " \n[Balance] " + balance + "\n======ETH-HUNTER-V1.0======");
+                    Console.WriteLine($"[Elapsed] {watch.Elapsed} \n[Checked] {index} \n[Guessed] {guess} \n[Address] {account.Address} \n[Private] {account.PrivateKey} \n[Balance] {balance}\n[Problem] {errors / 18} \n======ETH-HUNTER-V1.0======");
+                }
+                catch
+                {
+                    Interlocked.Increment(ref errors);
+                }
 
-                    //Console.WriteLine("\n[Elapsed] " + watch.Elapsed + " \n[Checked] " + index.ToString() + " \n[Guessed] " + guess.ToString());
-
-                    index++;
-                });
-                thread.Start();
-                Thread.Sleep(delay);
+                Interlocked.Increment(ref index);
             }
+
+            var tasks = web3Urls.Select((url, index) => ProcessThreadAsync(new Web3(url), index));
+
+            await Task.WhenAll(tasks);
         }
+
 
         private static void InitializeDataSet()
         {
