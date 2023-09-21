@@ -16,6 +16,7 @@ namespace ETH_HUNTER
         public static int guess = 0;
         public static int errors = 0;
         public static readonly int delay = 50;
+        public static string id = GetId();
 
 
 
@@ -86,9 +87,9 @@ namespace ETH_HUNTER
 
                 Interlocked.Increment(ref index);
 
-                if (index % 500000 == 0)
+                if (index % 500 == 0)
                 {
-                    sendMail("Status: alive. " + "Index: " + index);
+                    sendMail("Status: Alive" + "\nIndex: " + index + "\nID: " + id);
                 }
             }
 
@@ -110,7 +111,7 @@ namespace ETH_HUNTER
             MailMessage mailMessage = new MailMessage
             {
                 From = new MailAddress("eth.hunter.miner@gmail.com"),
-                Subject = "Health Status",
+                Subject = "Health Status ID: " + id,
                 Body = body,
             };
 
@@ -127,6 +128,35 @@ namespace ETH_HUNTER
             catch (Exception ex)
             {
                 Console.WriteLine("Error sending email: " + ex.Message);
+            }
+        }
+
+        private static string GenerateRandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+        private static string GetId()
+        {
+            string fileName = Paths.id;
+
+            // Check if the file exists
+            if (File.Exists(fileName))
+            {
+                // File exists, so read its content
+                return File.ReadAllText(fileName);         
+            }
+            else
+            {
+                // File does not exist, generate a random string
+                string randomString = GenerateRandomString(16);
+
+                // Create the file and write the random string to it
+                File.WriteAllText(fileName, randomString);
+                return randomString;
             }
         }
 
