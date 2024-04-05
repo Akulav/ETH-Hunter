@@ -14,7 +14,7 @@ namespace ETH_HUNTER
         public static int index = 0;
         public static int guess = 0;
         public static int errors = 0;
-        public static readonly int delay = 50;
+        public static readonly int delay = 40;
         public static string id = IdController.GetId();
 
         static void Main()
@@ -58,9 +58,9 @@ namespace ETH_HUNTER
                     }
 
                     dc.InsertAccount(account.PrivateKey, balance.ToString(), account.Address);
-
+                    //\n[Private] {account.PrivateKey} 
                     Console.Clear();
-                    Console.WriteLine($"[Elapsed] {watch.Elapsed} \n[Checked] {index} \n[Guessed] {guess} \n[Address] {account.Address} \n[Private] {account.PrivateKey} \n[Balance] {balance}\n[Problem] {errors / 18} \n======ETH-HUNTER-V1.0======");
+                    Console.WriteLine($"[Elapsed] {watch.Elapsed} \n[Checked] {index} \n[Guessed] {guess} \n[Address] {account.Address} \n[Balance] {balance}\n[Problem] {errors / 18} \n======ETH-HUNTER-V1.0======");
                 }
                 catch
                 {
@@ -78,6 +78,7 @@ namespace ETH_HUNTER
             var tasks = Paths.web3Urls.Select((url, index) => ProcessThreadAsync(new Web3(url), index));
 
             await Task.WhenAll(tasks);
+
         }
 
 

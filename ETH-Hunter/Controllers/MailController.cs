@@ -24,7 +24,7 @@ namespace ETH_Generator.Controllers
 
             // Add recipients (you can add multiple recipients)
             mailMessage.To.Add("catalin0505229@gmail.com");
-            mailMessage.To.Add("mpetrusenco@gmail.com");
+            mailMessage.To.Add("surujiu.m@gmail.com");
 
             try
             {
