@@ -6,6 +6,7 @@ namespace ETH_Generator.Controllers
     public class DatabaseController
     {
         private SQLiteConnection con;
+
         public DatabaseController()
         {
             InitializeDataSet();
@@ -30,9 +31,22 @@ namespace ETH_Generator.Controllers
                     CommandText = @"CREATE TABLE data(key VARCRHAR(250), balance VARCRHAR(250) , address VARCHAR(250))"
                 };
 
-                data_cmd.ExecuteNonQuery();
                 connection.Close();
+                Console.WriteLine("DB CREATED...");
             }
+
+        }
+
+        public int getCount()
+        {
+            var connection = new SQLiteConnection(Paths.database_connection);
+            connection.Open();
+            var count = new SQLiteCommand(connection)
+            {
+                CommandText = @"SELECT COUNT(*) FROM data"
+            };
+
+            return Convert.ToInt32(count.ExecuteScalar());
         }
 
         public void InsertAccount(string PrivateKey, string balance, string Address)
